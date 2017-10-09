@@ -62,20 +62,20 @@ function love.keypressed(key)
 			love.mouse.setVisible(false)
 		end
 	end
+
+	if key == 'q' then
+		if debugMode == true then
+			debugMode = false
+		else
+			debugMode = true
+		end
+	end
 end
 
 function love.draw()
 	drawPlayer()
-	drawRectacle()
 	drawCursor()
 	drawRay()
-end
-
-function drawRectacle()
-	love.graphics.push()
-	love.graphics.setColor(204, 51, 77)
-	love.graphics.rectangle('fill', (objects.player.body:getX() - 25),(objects.player.body:getY() + 5), 5, 10)
-	love.graphics.pop()
 end
 
 function drawRay()
@@ -83,25 +83,28 @@ function drawRay()
 	love.graphics.setColor(255, 101, 77)
 	love.graphics.setLineWidth(2)
 
-	xn, yn, fraction =
-	objects.player.Shape:rayCast(love.mouse.getX(), love.mouse.getY(),
-								objects.player.body:getX(), objects.player.body:getY(),
-								1, objects.player.body:getX(), objects.player.body:getY(), 0)
+	local xn, yn, fraction = objects.player.Shape:rayCast(love.mouse.getX(), love.mouse.getY(),
+							objects.player.body:getX(), objects.player.body:getY(),
+							1, objects.player.body:getX(), objects.player.body:getY(), 0)
 
 	if xn then
-		love.graphics.setColor(0, 0, 0)
-		love.graphics.print('Ray fraction '..fraction, 50, 50)
-		love.graphics.print('Ray x '..xn, 50, 65)
-		love.graphics.print('Ray y '..yn, 50, 80)
-		r1HitX = love.mouse.getX() + (objects.player.body:getX() - love.mouse.getX()) * fraction
-		r1HitY = love.mouse.getY() + (objects.player.body:getY() - love.mouse.getY()) * fraction
-		love.graphics.print('Ray x hit '..r1HitX, 50, 95)
-		love.graphics.print('Ray y hit '..r1HitY, 50, 110)
+		rayHitX = love.mouse.getX() + (objects.player.body:getX() - love.mouse.getX()) * fraction
+		rayHitY = love.mouse.getY() + (objects.player.body:getY() - love.mouse.getY()) * fraction
+
+		--Debug
+		if debugMode == true then
+			love.graphics.setColor(0, 0, 0)
+			love.graphics.print('Ray fraction: '..fraction, 50, 50)
+			love.graphics.print('Ray x: '..xn, 50, 65)
+			love.graphics.print('Ray y: '..yn, 50, 80)
+			love.graphics.print('Ray x hit at: '..rayHitX, 50, 95)
+			love.graphics.print('Ray y hit at: '..rayHitY, 50, 110)
+			love.graphics.setColor(255, 101, 77)
+		end
 	end
 
-	love.graphics.setColor(255, 101, 77)
-	love.graphics.line(love.mouse.getX(),  love.mouse.getY(), r1HitX, r1HitY)
-	love.graphics.rectangle('fill', r1HitX - 25, r1HitY, 10, 10)
+	love.graphics.line(love.mouse.getX(),  love.mouse.getY(), rayHitX, rayHitY)
+	love.graphics.rectangle('fill', rayHitX, rayHitY, 5, 10)
 	love.graphics.pop()
 end
 
