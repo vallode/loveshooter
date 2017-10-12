@@ -6,6 +6,12 @@ function love.load()
 
 	bulletSpeed = 1000
 
+	scale = 1
+	rotation = 0.332
+	funk = true
+
+	time = 0
+
 	objects = {}
 	bullets = {}
 
@@ -21,7 +27,7 @@ function love.load()
 	-- Pointer Path
 	objects.playerCircle = {}
 	objects.playerCircle.body = love.physics.newBody(world, width/2, height/2, 'static')
-	objects.playerCircle.Shape = love.physics.newCircleShape(25)
+	objects.playerCircle.Shape = love.physics.newCircleShape(25 * scale)
 
 	-- Pointer
 	objects.playerPointer = {}
@@ -30,9 +36,35 @@ function love.load()
 
 	--Debug
 	printDebug = {}
+
+	love.graphics.setBackgroundColor(75, love.math.random(0, 125), love.math.random(80, 105), 255)
+	r, g, b, a = love.math.random(0, 255), love.math.random(0, 255), love.math.random(0, 255), 255
 end
 
 function love.update(dt)
+	time = time + dt
+
+	printDebug[1] = 'FPS: ' .. tostring(love.timer.getFPS())
+	printDebug[2] = 'Avg. Delta: ' .. love.timer.getAverageDelta()
+	printDebug[9] = 'Player X: '..objects.player.body:getX()
+	printDebug[10] = 'Player Y: '..objects.player.body:getY()
+	printDebug[11] = 'Bullet number: ' .. table.getn(bullets)
+
+	if funk == true then
+		scale = scale + (dt * 1.1)
+		rotation = rotation + (dt * 5.5)
+	elseif funk == false then
+		scale = scale - (dt * 1.1)
+	end
+
+	if scale > 1.3 then
+		funk = false
+	elseif scale < 1 then
+		funk = true
+	end
+
+	objects.player.Shape = love.physics.newRectangleShape(25 * scale, 25 * scale)
+
 	world:update(dt)
 
 	-- Movement
@@ -42,10 +74,10 @@ function love.update(dt)
 	if (love.keyboard.isDown("a") and objects.player.body:getX() > 0) then
 		objects.player.body:applyForce(-2000, 0)
 	end
-	if (love.keyboard.isDown("s") and objects.player.body:getY() < 600 - 12.5) then
+	if (love.keyboard.isDown("s") and objects.player.body:getY() < height - 12.5) then
 		objects.player.body:applyForce(0, 2000)
 	end
-	if (love.keyboard.isDown("d") and objects.player.body:getX() < 800 - 12.5) then
+	if (love.keyboard.isDown("d") and objects.player.body:getX() < width - 12.5) then
 		objects.player.body:applyForce(2000, 0)
 	end
 
@@ -56,10 +88,10 @@ function love.update(dt)
 	if (objects.player.body:getX() < 0 + 12.5) then
 		objects.player.body:applyForce(8000, 0)
 	end
-	if (objects.player.body:getY() > 600 - 12.5) then
+	if (objects.player.body:getY() > height - 12.5) then
 		objects.player.body:applyForce(0, -8000)
 	end
-	if (objects.player.body:getX() > 800 - 12.5) then
+	if (objects.player.body:getX() > width - 12.5) then
 		objects.player.body:applyForce(-8000, 0)
 	end
 
@@ -71,32 +103,66 @@ function love.update(dt)
 end
 
 function love.draw()
-	love.graphics.setBackgroundColor(75, 122, 105, 255)
+
+	if funk == true and time > 1.0913 then
+		love.graphics.setBackgroundColor(75, love.math.random(0, 125), love.math.random(80, 105), 255)
+		r, g, b, a = love.math.random(0, 255), love.math.random(0, 255), love.math.random(0, 255), 255
+		time = 0
+	end
+
 	love.graphics.setColor(255, 255, 255, 255)
 	love.graphics.setLineWidth(2)
 
 	drawPlayer()
 	drawPlayerCircle()
+	drawPointer()
 	drawBullets()
 	drawCursor()
-	drawPointer()
 
-	love.graphics.print(table.concat(printDebug, '\n'), 20, 20)
+	if debugMode == true then
+		love.graphics.print(table.concat(printDebug, '\n'), 20, 20)
+	end
 end
+
+function drawPlayer()
+	love.graphics.push()
+
+	love.graphics.translate(objects.player.body:getX(), objects.player.body:getY())
+	love.graphics.rotate(rotation)
+	love.graphics.setColor(204, 51, 77)
+	love.graphics.polygon('fill', objects.player.Shape:getPoints())
+	love.graphics.pop()
+end
+
+function drawPlayerCircle()
+	love.graphics.push()
+	love.graphics.translate(objects.player.body:getX(), objects.player.body:getY())
+	objects.playerCircle.Shape = love.physics.newCircleShape(25 * scale)
+
+	if debugMode == true then
+		love.graphics.setLineWidth(2 * scale)
+		love.graphics.setColor(0, 0, 0, 100)
+	else
+		love.graphics.setLineWidth(0)
+		love.graphics.setColor(0, 0, 0, 0)
+	end
+
+	love.graphics.circle('line', 0, 0, 25 * scale)
+	love.graphics.pop()
+end
+
 
 function drawBullets()
 	love.graphics.push()
 
-	if debugMode == true then
-		love.graphics.setColor(0, 0, 0, 255)
-		love.graphics.print('Bullet number: ' .. table.getn(bullets), 20, 100)
-	end
+	love.graphics.setColor(r, g, b, a)
+	love.graphics.setBlendMode('additive')
 
-	love.graphics.setColor(255, 255, 255, 255)
 	for i,v in ipairs(bullets) do
-		love.graphics.circle('fill', v.x, v.y, 5)
+		love.graphics.circle('fill', v.x, v.y, 5 * scale)
 	end
 
+	love.graphics.setBlendMode('alpha')
 	love.graphics.pop()
 end
 
@@ -104,7 +170,7 @@ end
 function drawPointer()
 	love.graphics.push()
 	love.graphics.setColor(255, 101, 77)
-	love.graphics.setLineWidth(2)
+	love.graphics.setLineWidth(2 * scale)
 
 	local xn, yn, fraction = objects.playerCircle.Shape:rayCast(love.mouse.getX(), love.mouse.getY(),
 							objects.player.body:getX(), objects.player.body:getY(),
@@ -117,14 +183,12 @@ function drawPointer()
 
 		--Debug
 		if debugMode == true then
-			love.graphics.setColor(0, 0, 0)
-			love.graphics.print('Ray fraction: ' .. fraction, 20, 10)
-			love.graphics.print('Ray x: ' .. xn, 20, 25)
-			love.graphics.print('Ray y: ' .. yn, 20, 40)
-			love.graphics.print('Ray x hit at: ' .. rayHitX, 20, 55)
-			love.graphics.print('Ray y hit at: ' .. rayHitY, 20, 70)
-			love.graphics.print('Ray angle: ' .. angle, 20, 85)
-			love.graphics.setColor(255, 101, 77)
+			printDebug[3] = 'Ray fraction: ' .. fraction
+			printDebug[4] = 'Ray x: ' .. xn
+			printDebug[5] = 'Ray y: ' .. yn
+			printDebug[6] = 'Ray x hit at: ' .. rayHitX
+			printDebug[7] = 'Ray y hit at: ' .. rayHitY
+			printDebug[8] = 'Ray angle: ' .. angle
 			love.graphics.line(love.mouse.getX(),  love.mouse.getY(), rayHitX, rayHitY)
 		end
 	end
@@ -137,7 +201,7 @@ function drawPointer()
 				objects.playerPointer.body:setX(rayHitX)
 				objects.playerPointer.body:setY(rayHitY)
 				love.graphics.rotate(math.pi/2)
-				love.graphics.draw(objects.playerPointer.image, 0, 0, angle, 0.7, 0.7, 8, 8)
+				love.graphics.draw(objects.playerPointer.image, 0, 0, angle, 0.7 * scale, 0.7 * scale, 8, 8)
 			end
 
 		love.graphics.pop()
@@ -149,41 +213,8 @@ function drawCursor()
 	love.graphics.push()
 
 	love.graphics.setColor(255,255,255)
-	love.graphics.rectangle('fill', love.mouse.getX() - 2.5, love.mouse.getY() - 2.5, 5, 5)
+	love.graphics.rectangle('fill', love.mouse.getX() - ((5 * scale) / 2), love.mouse.getY() - ((5 * scale) / 2), 5 * scale, 5 * scale)
 
-	love.graphics.pop()
-end
-
-function drawPlayer()
-	love.graphics.push()
-
-	--Debug
-	if debugMode == true then
-		love.graphics.setColor(0, 0, 0)
-		love.graphics.print('Player X: '..objects.player.body:getX(), 20, 550)
-		love.graphics.print('Player Y: '..objects.player.body:getY(), 20, 565)
-		love.graphics.setColor(255, 101, 77)
-	end
-
-	love.graphics.translate(objects.player.body:getX(), objects.player.body:getY())
-	love.graphics.setColor(204, 51, 77)
-	love.graphics.polygon('fill', objects.player.Shape:getPoints())
-	love.graphics.pop()
-end
-
-function drawPlayerCircle()
-	love.graphics.push()
-	love.graphics.translate(objects.player.body:getX(), objects.player.body:getY())
-
-	if debugMode == true then
-		love.graphics.setLineWidth(2)
-		love.graphics.setColor(0, 0, 0, 100)
-	else
-		love.graphics.setLineWidth(0)
-		love.graphics.setColor(0, 0, 0, 0)
-	end
-
-	love.graphics.circle('line', 0, 0, 25)
 	love.graphics.pop()
 end
 
